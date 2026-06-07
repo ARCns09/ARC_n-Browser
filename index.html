@@ -65,6 +65,34 @@
         autocomplete="off"
       />
     </div>
+    <!-- Bookmark Star -->
+    <button id="btn-bookmark" class="nav-btn" title="Bookmark this page">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 1.5l1.85 3.75 4.15.6-3 2.93.71 4.12L8 10.88l-3.71 1.97.71-4.12-3-2.93 4.15-.6L8 1.5z"
+              stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"
+              class="star-path"/>
+      </svg>
+    </button>
+    <!-- Download Button -->
+    <button id="btn-downloads" class="nav-btn" title="Downloads">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span class="download-badge" id="download-badge" style="display:none;">0</span>
+    </button>
+  </div>
+
+  <!-- ── Download Panel ───────────────────────────────────────── -->
+  <div id="download-panel" class="download-panel hidden">
+    <div class="download-panel-header">
+      <span class="download-panel-title">Downloads</span>
+      <button id="download-panel-close" class="download-panel-close-btn">×</button>
+    </div>
+    <div id="download-list" class="download-list">
+      <!-- Download items injected by renderer.js -->
+    </div>
+    <div id="download-empty" class="download-empty">No downloads yet</div>
   </div>
 
   <script src="renderer.js"></script>

@@ -12,9 +12,12 @@
   --bg-tab-hover:  rgba(255, 255, 255, 0.08);
   --bg-tab-active: rgba(233, 69, 96, 0.08);
   --bg-input:      rgba(255, 255, 255, 0.06);
+  --bg-panel:      rgba(22, 33, 62, 0.97);
   --accent:        #e94560;
   --accent-glow:   rgba(233, 69, 96, 0.25);
   --accent-hover:  #ff6b6b;
+  --green:         #4ade80;
+  --yellow:        #fbbf24;
   --text-primary:  #e0e0e0;
   --text-muted:    #8a8a9a;
   --text-dim:      #5a5a6e;
@@ -72,9 +75,8 @@ input {
   padding: 0 8px 0 8px;
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-subtle);
-  -webkit-app-region: drag; /* allow window dragging from tab bar */
+  -webkit-app-region: drag;
   gap: 2px;
-  /* Leave space for the Windows title-bar overlay buttons (≈140px) */
   padding-right: 140px;
 }
 
@@ -123,6 +125,25 @@ input {
   background: var(--bg-tab-active);
   color: var(--text-primary);
   box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* ── Tab Favicon ─────────────────────────────────────────────────────────── */
+.tab-favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.tab-favicon-fallback {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tab-title {
@@ -202,6 +223,7 @@ input {
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   transition: background var(--transition), color var(--transition), transform var(--transition);
+  position: relative;
 }
 
 .nav-btn:hover:not(:disabled) {
@@ -217,6 +239,40 @@ input {
 .nav-btn:disabled {
   opacity: 0.3;
   cursor: default;
+}
+
+/* ── Bookmark Star ───────────────────────────────────────────────────────── */
+#btn-bookmark .star-path {
+  fill: transparent;
+  transition: fill var(--transition), stroke var(--transition);
+}
+
+#btn-bookmark.bookmarked .star-path {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+#btn-bookmark.bookmarked {
+  color: var(--accent);
+}
+
+/* ── Download Badge ──────────────────────────────────────────────────────── */
+.download-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
 }
 
 /* ── Omnibox ─────────────────────────────────────────────────────────────── */
@@ -270,6 +326,176 @@ input {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   DOWNLOAD PANEL
+   ═══════════════════════════════════════════════════════════════════════════ */
+.download-panel {
+  position: fixed;
+  top: 82px;
+  right: 12px;
+  width: 360px;
+  max-height: 400px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  overflow: hidden;
+  transition: opacity 0.25s, transform 0.25s;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.download-panel.hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+
+.download-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.download-panel-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+.download-panel-close-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--text-muted);
+  transition: background var(--transition), color var(--transition);
+}
+
+.download-panel-close-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+}
+
+.download-list {
+  overflow-y: auto;
+  max-height: 330px;
+  padding: 8px;
+}
+
+.download-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+/* ── Download Item ───────────────────────────────────────────────────────── */
+.download-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  margin-bottom: 6px;
+  transition: background var(--transition);
+}
+
+.download-item:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.download-filename {
+  font-weight: 500;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.download-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.download-speed {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.download-progress-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.download-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+.download-progress-fill.completed {
+  background: var(--green);
+}
+
+.download-progress-fill.failed {
+  background: var(--accent);
+}
+
+.download-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.download-action-btn {
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-muted);
+  transition: background var(--transition), color var(--transition);
+}
+
+.download-action-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--text-primary);
+}
+
+.download-action-btn.primary {
+  border-color: rgba(233,69,96,0.3);
+  color: var(--accent);
+}
+
+.download-action-btn.primary:hover {
+  background: rgba(233,69,96,0.15);
+}
+
+.download-state {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.download-state.completed { color: var(--green); }
+.download-state.failed { color: var(--accent); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ANIMATIONS & MICRO-INTERACTIONS
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -287,6 +513,17 @@ input {
 
 .tab {
   animation: tab-in 0.25s var(--transition) both;
+}
+
+/* Bookmark star pulse */
+@keyframes star-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+#btn-bookmark.just-bookmarked {
+  animation: star-pulse 0.35s ease;
 }
 
 /* Subtle pulse on the new-tab button when no tabs exist (edge case) */
@@ -331,5 +568,10 @@ input {
   .nav-btn {
     width: 28px;
     height: 28px;
+  }
+
+  .download-panel {
+    width: 300px;
+    right: 8px;
   }
 }

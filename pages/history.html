@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History — ARC_n</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      color: #e0e0e0;
+      padding: 32px 40px;
+      overflow-y: auto;
+    }
+
+    /* ── Header ──────────────────────────────────────────────── */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .page-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #e94560, #ff6b6b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* ── Search Bar ──────────────────────────────────────────── */
+    .search-input {
+      width: 300px;
+      padding: 10px 16px 10px 40px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: #e0e0e0;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: rgba(233,69,96,0.4);
+      box-shadow: 0 0 12px rgba(233,69,96,0.15);
+    }
+
+    .search-input::placeholder { color: #5a5a6e; }
+
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #5a5a6e;
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: #e0e0e0;
+      font-size: 0.85rem;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-danger {
+      border-color: rgba(233,69,96,0.3);
+      color: #e94560;
+    }
+
+    .btn-danger:hover {
+      background: rgba(233,69,96,0.15);
+      border-color: rgba(233,69,96,0.5);
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 0.78rem;
+    }
+
+    /* ── History List ────────────────────────────────────────── */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      transition: background 0.2s;
+    }
+
+    .history-item:hover {
+      background: rgba(255,255,255,0.07);
+    }
+
+    .history-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .history-title {
+      font-weight: 500;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-url {
+      font-size: 0.78rem;
+      color: #8a8a9a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-time {
+      font-size: 0.75rem;
+      color: #5a5a6e;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 80px;
+      text-align: right;
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      flex-shrink: 0;
+    }
+
+    .history-item:hover .history-actions {
+      opacity: 1;
+    }
+
+    /* ── Empty State ─────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #5a5a6e;
+    }
+
+    .empty-state .icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+
+    .empty-state p {
+      font-size: 0.95rem;
+    }
+
+    /* ── Date Separator ──────────────────────────────────────── */
+    .date-separator {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #8a8a9a;
+      padding: 16px 4px 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ── Scrollbar ───────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1 class="page-title">📜 Browsing History</h1>
+    <div class="header-actions">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search history…" />
+      </div>
+      <button class="btn btn-danger" id="btnClearAll">Clear All</button>
+    </div>
+  </div>
+
+  <div id="historyList" class="history-list">
+    <!-- Populated by JS -->
+  </div>
+
+  <div id="emptyState" class="empty-state" style="display:none;">
+    <div class="icon">🕐</div>
+    <p>No browsing history yet</p>
+  </div>
+
+  <script>
+    const listEl = document.getElementById('historyList');
+    const emptyEl = document.getElementById('emptyState');
+    const searchInput = document.getElementById('searchInput');
+    const btnClearAll = document.getElementById('btnClearAll');
+
+    function formatTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatDate(ts) {
+      const d = new Date(ts);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      if (d.toDateString() === today.toDateString()) return 'Today';
+      if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+      return d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    function renderHistory(entries) {
+      listEl.innerHTML = '';
+
+      if (!entries || entries.length === 0) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+
+      let lastDate = '';
+
+      entries.forEach(entry => {
+        const dateStr = formatDate(entry.timestamp);
+
+        if (dateStr !== lastDate) {
+          lastDate = dateStr;
+          const sep = document.createElement('div');
+          sep.className = 'date-separator';
+          sep.textContent = dateStr;
+          listEl.appendChild(sep);
+        }
+
+        const item = document.createElement('div');
+        item.className = 'history-item';
+
+        item.innerHTML = `
+          <div class="history-info">
+            <div class="history-title">${escapeHtml(entry.title)}</div>
+            <div class="history-url">${escapeHtml(entry.url)}</div>
+          </div>
+          <div class="history-time">${formatTime(entry.timestamp)}</div>
+          <div class="history-actions">
+            <button class="btn btn-sm" data-action="visit">Visit</button>
+            <button class="btn btn-sm btn-danger" data-action="delete">Delete</button>
+          </div>
+        `;
+
+        // Visit button
+        item.querySelector('[data-action="visit"]').addEventListener('click', () => {
+          window.arcnInternal.navigate(entry.url);
+        });
+
+        // Delete button
+        item.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+          await window.arcnInternal.removeHistory(entry.timestamp);
+          loadHistory();
+        });
+
+        listEl.appendChild(item);
+      });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function loadHistory(query) {
+      let entries;
+      if (query) {
+        entries = await window.arcnInternal.searchHistory(query);
+      } else {
+        entries = await window.arcnInternal.getAllHistory();
+      }
+      renderHistory(entries);
+    }
+
+    // Search
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        loadHistory(searchInput.value.trim());
+      }, 200);
+    });
+
+    // Clear all
+    btnClearAll.addEventListener('click', async () => {
+      if (confirm('Clear all browsing history?')) {
+        await window.arcnInternal.clearHistory();
+        loadHistory();
+      }
+    });
+
+    // Initial load
+    loadHistory();
+  </script>
+</body>
+</html>

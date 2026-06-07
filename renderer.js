@@ -1,35 +1,55 @@
 // renderer.js — ARC_n Browser UI Logic
-// Handles DOM manipulation for the tab bar, toolbar buttons, and omnibox.
-// Communicates with the main process exclusively through the `window.arcn` API (preload bridge).
+// Handles DOM manipulation for tabs (with favicons), toolbar, omnibox,
+// bookmark star, download panel, and keyboard shortcuts.
+// Communicates with the main process exclusively through the `window.arcn` API.
 
 (() => {
   'use strict';
 
   // ── DOM References ──────────────────────────────────────────────────────
-  const tabsContainer = document.getElementById('tabs-container');
-  const btnNewTab     = document.getElementById('btn-new-tab');
-  const btnBack       = document.getElementById('btn-back');
-  const btnForward    = document.getElementById('btn-forward');
-  const btnReload     = document.getElementById('btn-reload');
-  const btnHome       = document.getElementById('btn-home');
-  const omnibox       = document.getElementById('omnibox');
+  const tabsContainer    = document.getElementById('tabs-container');
+  const btnNewTab        = document.getElementById('btn-new-tab');
+  const btnBack          = document.getElementById('btn-back');
+  const btnForward       = document.getElementById('btn-forward');
+  const btnReload        = document.getElementById('btn-reload');
+  const btnHome          = document.getElementById('btn-home');
+  const omnibox          = document.getElementById('omnibox');
+  const btnBookmark      = document.getElementById('btn-bookmark');
+  const btnDownloads     = document.getElementById('btn-downloads');
+  const downloadPanel    = document.getElementById('download-panel');
+  const downloadList     = document.getElementById('download-list');
+  const downloadEmpty    = document.getElementById('download-empty');
+  const downloadBadge    = document.getElementById('download-badge');
+  const downloadPanelClose = document.getElementById('download-panel-close');
 
-  // ── Tab UI State ────────────────────────────────────────────────────────
-  // Mirror of the main process tabs array, kept lightweight (id + title only)
+  // ── State ───────────────────────────────────────────────────────────────
   let activeTabId = null;
-  const tabOrder = []; // ordered array of tab IDs, mirrors main process order
+  const tabOrder = [];
+  let currentUrl = '';
+  let currentTitle = '';
+  let activeDownloads = 0;
 
-  // ── Tab UI Helpers ──────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════════════
+  //  TAB UI (with Favicons)
+  // ═════════════════════════════════════════════════════════════════════════
 
-  /**
-   * Create a tab element in the tab bar.
-   * @param {number} id   — unique tab ID from main process
-   * @param {string} title — initial tab title
-   */
+  /** Fallback globe SVG for tabs without favicons */
+  const FAVICON_FALLBACK_SVG = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1"/>
+    <path d="M7 1.5C5.5 3 4.5 5 4.5 7s1 4 2.5 5.5M7 1.5C8.5 3 9.5 5 9.5 7s-1 4-2.5 5.5" stroke="currentColor" stroke-width="0.8"/>
+    <path d="M2 5h10M2 9h10" stroke="currentColor" stroke-width="0.8"/>
+  </svg>`;
+
   function createTabUI(id, title) {
     const tab = document.createElement('div');
     tab.className = 'tab';
     tab.dataset.tabId = id;
+
+    // Favicon (fallback by default)
+    const faviconWrap = document.createElement('span');
+    faviconWrap.className = 'tab-favicon-fallback';
+    faviconWrap.innerHTML = FAVICON_FALLBACK_SVG;
+    faviconWrap.dataset.faviconSlot = 'true';
 
     const tabTitle = document.createElement('span');
     tabTitle.className = 'tab-title';
@@ -40,16 +60,15 @@
     tabClose.title = 'Close tab';
     tabClose.innerHTML = '×';
 
+    tab.appendChild(faviconWrap);
     tab.appendChild(tabTitle);
     tab.appendChild(tabClose);
 
-    // Click on the tab body → switch to this tab
     tab.addEventListener('click', (e) => {
       if (e.target === tabClose || tabClose.contains(e.target)) return;
       window.arcn.switchTab(id);
     });
 
-    // Click the close button → close this tab
     tabClose.addEventListener('click', (e) => {
       e.stopPropagation();
       window.arcn.closeTab(id);
@@ -57,48 +76,28 @@
 
     tabsContainer.appendChild(tab);
     tabOrder.push(id);
-
-    // Scroll the new tab into view
     tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
   }
 
-  /**
-   * Set a tab as visually active and update the omnibox.
-   * @param {number} id
-   */
   function activateTabUI(id) {
     activeTabId = id;
-
-    // Toggle .active class on all tabs
     tabsContainer.querySelectorAll('.tab').forEach((tab) => {
       tab.classList.toggle('active', Number(tab.dataset.tabId) === id);
     });
   }
 
-  /**
-   * Remove a tab element from the bar with an exit animation.
-   * @param {number} id
-   */
   function removeTabUI(id) {
     const tab = tabsContainer.querySelector(`.tab[data-tab-id="${id}"]`);
     if (tab) {
-      // Exit animation
       tab.style.transition = 'opacity 0.15s, transform 0.15s';
       tab.style.opacity = '0';
       tab.style.transform = 'translateY(-4px) scale(0.9)';
       setTimeout(() => tab.remove(), 150);
     }
-
-    // Remove from the order array
     const idx = tabOrder.indexOf(id);
     if (idx !== -1) tabOrder.splice(idx, 1);
   }
 
-  /**
-   * Update the title text of a tab.
-   * @param {number} id
-   * @param {string} title
-   */
   function updateTabTitle(id, title) {
     const tab = tabsContainer.querySelector(`.tab[data-tab-id="${id}"]`);
     if (tab) {
@@ -108,7 +107,186 @@
     }
   }
 
-  // ── Omnibox Logic ───────────────────────────────────────────────────────
+  function updateTabFavicon(id, faviconUrl) {
+    const tab = tabsContainer.querySelector(`.tab[data-tab-id="${id}"]`);
+    if (!tab) return;
+
+    const slot = tab.querySelector('[data-favicon-slot]');
+    if (!slot) return;
+
+    if (faviconUrl) {
+      // Replace with actual favicon image
+      const img = document.createElement('img');
+      img.className = 'tab-favicon';
+      img.src = faviconUrl;
+      img.dataset.faviconSlot = 'true';
+      img.onerror = () => {
+        // Revert to fallback on load error
+        const fallback = document.createElement('span');
+        fallback.className = 'tab-favicon-fallback';
+        fallback.innerHTML = FAVICON_FALLBACK_SVG;
+        fallback.dataset.faviconSlot = 'true';
+        img.replaceWith(fallback);
+      };
+      slot.replaceWith(img);
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  //  BOOKMARK STAR
+  // ═════════════════════════════════════════════════════════════════════════
+
+  btnBookmark.addEventListener('click', async () => {
+    if (!currentUrl || currentUrl.startsWith('data:')) return;
+    const isNowBookmarked = await window.arcn.toggleBookmark(currentTitle, currentUrl);
+    updateBookmarkStar(isNowBookmarked);
+
+    // Pulse animation
+    if (isNowBookmarked) {
+      btnBookmark.classList.add('just-bookmarked');
+      setTimeout(() => btnBookmark.classList.remove('just-bookmarked'), 400);
+    }
+  });
+
+  function updateBookmarkStar(isBookmarked) {
+    btnBookmark.classList.toggle('bookmarked', isBookmarked);
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  //  DOWNLOAD PANEL
+  // ═════════════════════════════════════════════════════════════════════════
+
+  function toggleDownloadPanel() {
+    downloadPanel.classList.toggle('hidden');
+  }
+
+  btnDownloads.addEventListener('click', toggleDownloadPanel);
+  downloadPanelClose.addEventListener('click', () => {
+    downloadPanel.classList.add('hidden');
+  });
+
+  // Close panel when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!downloadPanel.classList.contains('hidden') &&
+        !downloadPanel.contains(e.target) &&
+        e.target !== btnDownloads &&
+        !btnDownloads.contains(e.target)) {
+      downloadPanel.classList.add('hidden');
+    }
+  });
+
+  function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
+  }
+
+  function formatSpeed(bytesPerSec) {
+    if (bytesPerSec <= 0) return '';
+    return formatBytes(bytesPerSec) + '/s';
+  }
+
+  function createDownloadItem(data) {
+    downloadEmpty.style.display = 'none';
+
+    const item = document.createElement('div');
+    item.className = 'download-item';
+    item.dataset.downloadId = data.id;
+
+    item.innerHTML = `
+      <div class="download-filename" title="${data.filename}">${data.filename}</div>
+      <div class="download-meta">
+        <span class="download-size">0 B / ${formatBytes(data.totalBytes)}</span>
+        <span class="download-speed"></span>
+      </div>
+      <div class="download-progress-bar">
+        <div class="download-progress-fill" style="width: 0%"></div>
+      </div>
+      <div class="download-actions" style="display:none;"></div>
+    `;
+
+    downloadList.prepend(item);
+
+    // Show panel automatically
+    downloadPanel.classList.remove('hidden');
+
+    // Update badge
+    activeDownloads++;
+    updateDownloadBadge();
+  }
+
+  function updateDownloadProgress(data) {
+    const item = downloadList.querySelector(`.download-item[data-download-id="${data.id}"]`);
+    if (!item) return;
+
+    const percent = data.totalBytes > 0
+      ? Math.round((data.receivedBytes / data.totalBytes) * 100)
+      : 0;
+
+    const fill = item.querySelector('.download-progress-fill');
+    fill.style.width = percent + '%';
+
+    const sizeEl = item.querySelector('.download-size');
+    sizeEl.textContent = `${formatBytes(data.receivedBytes)} / ${formatBytes(data.totalBytes)} (${percent}%)`;
+
+    const speedEl = item.querySelector('.download-speed');
+    speedEl.textContent = formatSpeed(data.speed);
+  }
+
+  function completeDownload(data) {
+    const item = downloadList.querySelector(`.download-item[data-download-id="${data.id}"]`);
+    if (!item) return;
+
+    const fill = item.querySelector('.download-progress-fill');
+    fill.style.width = '100%';
+    fill.classList.add('completed');
+
+    const sizeEl = item.querySelector('.download-size');
+    sizeEl.textContent = formatBytes(data.totalBytes);
+
+    const speedEl = item.querySelector('.download-speed');
+    speedEl.innerHTML = '<span class="download-state completed">✓ Complete</span>';
+
+    const actions = item.querySelector('.download-actions');
+    actions.style.display = 'flex';
+    actions.innerHTML = `<button class="download-action-btn primary" data-action="open-folder">Open Folder</button>`;
+
+    actions.querySelector('[data-action="open-folder"]').addEventListener('click', () => {
+      window.arcn.openDownloadFolder(data.id);
+    });
+
+    activeDownloads = Math.max(0, activeDownloads - 1);
+    updateDownloadBadge();
+  }
+
+  function failDownload(data) {
+    const item = downloadList.querySelector(`.download-item[data-download-id="${data.id}"]`);
+    if (!item) return;
+
+    const fill = item.querySelector('.download-progress-fill');
+    fill.classList.add('failed');
+
+    const speedEl = item.querySelector('.download-speed');
+    speedEl.innerHTML = `<span class="download-state failed">✕ ${data.state || 'Failed'}</span>`;
+
+    activeDownloads = Math.max(0, activeDownloads - 1);
+    updateDownloadBadge();
+  }
+
+  function updateDownloadBadge() {
+    if (activeDownloads > 0) {
+      downloadBadge.textContent = activeDownloads;
+      downloadBadge.style.display = 'flex';
+    } else {
+      downloadBadge.style.display = 'none';
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
+  //  OMNIBOX
+  // ═════════════════════════════════════════════════════════════════════════
 
   omnibox.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
@@ -120,12 +298,13 @@
     }
   });
 
-  // Select all text on focus for easy overwriting
   omnibox.addEventListener('focus', () => {
     setTimeout(() => omnibox.select(), 0);
   });
 
-  // ── Toolbar Buttons ─────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════════════
+  //  TOOLBAR BUTTONS
+  // ═════════════════════════════════════════════════════════════════════════
 
   btnBack.addEventListener('click',    () => window.arcn.goBack());
   btnForward.addEventListener('click', () => window.arcn.goForward());
@@ -133,7 +312,9 @@
   btnHome.addEventListener('click',    () => window.arcn.goHome());
   btnNewTab.addEventListener('click',  () => window.arcn.createTab());
 
-  // ── Keyboard Shortcuts ──────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════════════
+  //  KEYBOARD SHORTCUTS
+  // ═════════════════════════════════════════════════════════════════════════
 
   document.addEventListener('keydown', (e) => {
     const ctrl = e.ctrlKey || e.metaKey;
@@ -154,6 +335,14 @@
       e.preventDefault();
       window.arcn.reload();
     }
+    if (ctrl && e.key === 'd') {
+      e.preventDefault();
+      btnBookmark.click();
+    }
+    if (ctrl && e.key === 'j') {
+      e.preventDefault();
+      toggleDownloadPanel();
+    }
     if (e.altKey && e.key === 'ArrowLeft') {
       e.preventDefault();
       window.arcn.goBack();
@@ -164,7 +353,9 @@
     }
   });
 
-  // ── Events from Main Process ────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════════════
+  //  EVENTS FROM MAIN PROCESS
+  // ═════════════════════════════════════════════════════════════════════════
 
   window.arcn.onTabCreated((id, title) => {
     createTabUI(id, title);
@@ -176,6 +367,11 @@
 
   window.arcn.onTitleUpdated((id, title) => {
     updateTabTitle(id, title);
+    if (id === activeTabId) currentTitle = title;
+  });
+
+  window.arcn.onFaviconUpdated((id, favicon) => {
+    updateTabFavicon(id, favicon);
   });
 
   window.arcn.onUrlUpdated((id, url) => {
@@ -192,13 +388,35 @@
     btnBack.disabled    = !state.canGoBack;
     btnForward.disabled = !state.canGoForward;
 
-    // Update the omnibox with the current URL (hide data: URLs for home page)
     if (state.url && !state.url.startsWith('data:')) {
       omnibox.value = state.url;
+      currentUrl = state.url;
     } else {
       omnibox.value = '';
       omnibox.placeholder = 'Search Google or enter a URL…';
+      currentUrl = '';
     }
+
+    // Update bookmark star
+    updateBookmarkStar(state.isBookmarked || false);
+  });
+
+  // ── Download Events ──────────────────────────────────────────────────────
+
+  window.arcn.onDownloadStarted((data) => {
+    createDownloadItem(data);
+  });
+
+  window.arcn.onDownloadProgress((data) => {
+    updateDownloadProgress(data);
+  });
+
+  window.arcn.onDownloadCompleted((data) => {
+    completeDownload(data);
+  });
+
+  window.arcn.onDownloadFailed((data) => {
+    failDownload(data);
   });
 
 })();
