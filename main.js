@@ -8,10 +8,10 @@ const fetch = require('cross-fetch');
 const { ElectronBlocker } = require('@ghostery/adblocker-electron');
 
 // ── Manager Modules ──────────────────────────────────────────────────────────
-const BookmarkManager  = require('./managers/BookmarkManager');
-const HistoryManager   = require('./managers/HistoryManager');
-const DownloadManager  = require('./managers/DownloadManager');
-const ShortcutManager  = require('./managers/ShortcutManager');
+const BookmarkManager = require('./managers/BookmarkManager');
+const HistoryManager = require('./managers/HistoryManager');
+const DownloadManager = require('./managers/DownloadManager');
+const ShortcutManager = require('./managers/ShortcutManager');
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const UI_HEIGHT = 82;                  // px — tab bar (40) + toolbar (42)
@@ -444,12 +444,17 @@ function sendNavigationState(tabId) {
 function createTab(url) {
   const tabId = nextTabId++;
 
+  const internalPage = url && isInternalUrl(url);
+
   const view = new WebContentsView({
     webPreferences: {
       partition: TAB_SESSION,
       contextIsolation: true,
-      sandbox: true,
-      nodeIntegration: false
+      sandbox: false,
+      nodeIntegration: false,
+      preload: internalPage
+        ? path.join(__dirname, 'pages', 'preload-internal.js')
+        : undefined
     }
   });
 
@@ -605,8 +610,8 @@ function closeTab(tabId) {
 function registerIPC() {
   // ── Tab management ──────────────────────────────────────────────────────
   ipcMain.handle('tab:create', (_e, url) => createTab(url));
-  ipcMain.handle('tab:close',  (_e, id)  => closeTab(id));
-  ipcMain.handle('tab:switch', (_e, id)  => switchTab(id));
+  ipcMain.handle('tab:close', (_e, id) => closeTab(id));
+  ipcMain.handle('tab:switch', (_e, id) => switchTab(id));
 
   // ── Navigation ──────────────────────────────────────────────────────────
   ipcMain.handle('nav:go', (_e, url) => {
@@ -664,7 +669,27 @@ function registerIPC() {
 
   ipcMain.handle('nav:home', () => {
     const tab = getActiveTab();
-    if (tab) tab.view.webContents.loadURL(getHomeDataUrl());
+
+    if (!tab) return;
+
+    tab.title = 'ARC_n Home';
+    tab.favicon = null;
+
+    sendToRenderer(
+      'tab:title-updated',
+      tab.id,
+      tab.title
+    );
+
+    sendToRenderer(
+      'tab:favicon-updated',
+      tab.id,
+      null
+    );
+
+    tab.view.webContents.loadURL(
+      getHomeDataUrl()
+    );
   });
 
   // ── Bookmarks ───────────────────────────────────────────────────────────
@@ -746,7 +771,7 @@ async function createWindow() {
   mainWindow.loadFile('index.html');
 
   mainWindow.on('resize', resizeActiveView);
-  mainWindow.on('maximize',   () => setTimeout(resizeActiveView, 50));
+  mainWindow.on('maximize', () => setTimeout(resizeActiveView, 50));
   mainWindow.on('unmaximize', () => setTimeout(resizeActiveView, 50));
 
   mainWindow.webContents.on('did-finish-load', () => {
@@ -769,10 +794,10 @@ app.whenReady().then(async () => {
   const userDataPath = app.getPath('userData');
 
   // ── Initialize Managers ────────────────────────────────────────────────
-  bookmarkManager  = new BookmarkManager(userDataPath);
-  historyManager   = new HistoryManager(userDataPath);
-  downloadManager  = new DownloadManager(sendToRenderer);
-  shortcutManager  = new ShortcutManager(userDataPath);
+  bookmarkManager = new BookmarkManager(userDataPath);
+  historyManager = new HistoryManager(userDataPath);
+  downloadManager = new DownloadManager(sendToRenderer);
+  shortcutManager = new ShortcutManager(userDataPath);
 
   console.log('✔ Managers initialized (bookmarks, history, downloads, shortcuts)');
 

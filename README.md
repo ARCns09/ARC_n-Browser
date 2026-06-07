@@ -25,11 +25,11 @@ ARC_n Browser is an experimental next-generation desktop browser focused on spee
 
 ### Browser Experience
 
-* [ ] Favicons
-* [ ] Bookmarks System
-* [ ] Browsing History
-* [ ] Download Manager
-* [ ] Dynamic Start Page
+* [x] Favicons
+* [x] Bookmarks System
+* [x] Browsing History
+* [x] Download Manager
+* [x] Dynamic Start Page
 
 ### Productivity
 
