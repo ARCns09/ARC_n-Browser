@@ -6,6 +6,18 @@ ARC_n Browser is an experimental next-generation desktop browser focused on spee
 
 ---
 
+## 📊 Project Status
+
+Current Version: **v0.1.0 Alpha**
+
+Status: 🚧 Active Development
+
+Latest Milestone:
+- ✅ Core Browser Experience Complete
+- 🚧 Browser Polish & Stability Improvements
+
+---
+
 ## ✨ Features
 
 ### Current Features
@@ -13,15 +25,19 @@ ARC_n Browser is an experimental next-generation desktop browser focused on spee
 * 🗂️ Multi-tab browsing
 * 🌐 Modern WebContentsView architecture
 * 🛡️ Integrated ad blocking
+* ⭐ Bookmarks system
+* 📜 Browsing history
+* ⬇️ Download manager
+* 🏠 Dynamic start page
 * 🎨 Clean dark-themed interface
-* 🏠 Custom start page
 * 🔒 Secure Electron configuration
 * ⚡ Fast tab switching
 * 📍 Smart address bar navigation
+* 💾 Persistent local storage
 
 ---
 
-## 🚀 Phase 1 Roadmap
+## 🗺️ Development Roadmap
 
 ### Browser Experience
 
@@ -60,15 +76,29 @@ ARC_n Browser is an experimental next-generation desktop browser focused on spee
 
 ---
 
+📌 For the complete development roadmap, planned features, release goals, and project progress, see:
+
+➡️ [ROADMAP.md](ROADMAP.md)
+
+---
+
 ## 📸 Screenshots
 
 ### Main Browser Window
 
+![Main Window](screenshots/main-window.jpg)
+
 ### Start Page
+
+![Start Page](screenshots/start-page.png)
 
 ### Bookmarks
 
+![Bookmarks](screenshots/bookmarks-page.png)
+
 ### History
+
+![History](screenshots/history-page.png)
 
 ### Download Manager
 
@@ -97,16 +127,25 @@ ARC_n Browser is built using:
 ```text
 ARC_n-Browser/
 │
+├── managers/
+│   ├── BookmarkManager.js
+│   ├── HistoryManager.js
+│   ├── DownloadManager.js
+│   └── ShortcutManager.js
+│
+├── pages/
+│   ├── bookmarks.html
+│   └── history.html
+│
 ├── main.js
 ├── preload.js
 ├── renderer.js
 ├── index.html
 ├── styles.css
 │
-├── package.json
-├── package-lock.json
-│
+├── ROADMAP.md
 ├── README.md
+├── package.json
 └── .gitignore
 ```
 
@@ -259,9 +298,7 @@ Please open an issue with:
 
 ## 📜 License
 
-This project is currently under active development.
-
-A license will be added before the first public release.
+Licensed under the MIT License.
 
 ---
 

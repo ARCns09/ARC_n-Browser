@@ -1,10 +1,11 @@
 {
   "name": "arcn-browser",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "ARC_n — A lightweight, privacy-first desktop browser with native ad-blocking",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder"
   },
   "keywords": [
     "browser",
@@ -12,13 +13,29 @@
     "ad-blocker",
     "privacy"
   ],
-  "author": "",
+  "author": "Arc",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^35.7.5"
+    "electron": "^35.7.5",
+    "electron-builder": "^26.15.2"
   },
   "dependencies": {
     "@ghostery/adblocker-electron": "^2.3.0",
     "cross-fetch": "^4.1.0"
+  },
+  "build": {
+    "appId": "com.arcns09.arcn",
+    "productName": "ARC_n Browser",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**/*",
+      "!node_modules/.cache/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    }
   }
 }
