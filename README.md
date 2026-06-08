@@ -1,5 +1,11 @@
 # ARC_n Browser
 
+![Version](https://img.shields.io/badge/version-v0.1.0--alpha-blue)
+![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-Active%20Development-orange)
+![Release](https://img.shields.io/github/v/release/ARCns09/ARC_n-Browser)
+
 > A modern, lightweight, privacy-focused desktop browser built with Electron.
 
 ARC_n Browser is an experimental next-generation desktop browser focused on speed, simplicity, customization, and modern web technologies. Built using Electron's modern `WebContentsView` architecture, ARC_n aims to provide a clean browsing experience while remaining highly customizable and developer-friendly.
@@ -13,8 +19,44 @@ Current Version: **v0.1.0 Alpha**
 Status: 🚧 Active Development
 
 Latest Milestone:
-- ✅ Core Browser Experience Complete
-- 🚧 Browser Polish & Stability Improvements
+
+* ✅ Core Browser Experience Complete
+* 🚧 Browser Polish & Stability Improvements
+
+### Current Focus
+
+The current development focus is improving usability, stability, and overall browser polish before the next release.
+
+Planned improvements include:
+
+* Three-dot browser menu
+* Bookmark bar
+* Keyboard shortcut improvements
+* Settings page
+* Recently closed tabs
+* General UI refinements
+
+---
+
+## Downloads
+
+Download the latest build from the Releases page.
+
+Portable ZIP builds are provided for testing.
+
+https://github.com/ARCns09/ARC_n-Browser/releases
+
+---
+
+## 📚 Documentation
+
+Additional documentation is available through the project Wiki:
+
+https://github.com/ARCns09/ARC_n-Browser/wiki
+
+For detailed planning and future goals:
+
+➡️ [ROADMAP.md](roadmap.md)
 
 ---
 
@@ -102,7 +144,7 @@ Latest Milestone:
 
 ### Download Manager
 
-> Screenshots will be added as development progresses.
+Coming soon in a future update.
 
 ---
 
@@ -293,6 +335,37 @@ Please open an issue with:
 * Actual behavior
 * Steps to reproduce
 * Screenshots (if applicable)
+
+---
+
+## 🔨 Building
+
+To create a production build:
+
+```bash
+npm run build
+```
+
+Build output will be generated in:
+
+```text
+dist/
+```
+
+---
+
+## ⚠️ Known Issues
+
+As an early alpha release, some features are still being refined.
+
+Current known issues:
+
+* Some keyboard shortcuts are incomplete
+* Download manager UI requires additional polish
+* Settings page is not yet implemented
+* Certain UI elements may change significantly in future releases
+
+Bug reports and feedback are highly appreciated.
 
 ---
 
