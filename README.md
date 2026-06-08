@@ -78,7 +78,7 @@ Latest Milestone:
 
 📌 For the complete development roadmap, planned features, release goals, and project progress, see:
 
-➡️ [ROADMAP.md](ROADMAP.md)
+➡️ [roadmap.md](roadmap.md)
 
 ---
 

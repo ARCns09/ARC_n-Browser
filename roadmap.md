@@ -5,7 +5,7 @@
 * ⏳ Planned
 * 🔍 Researching
 
-# ARC_n Browser Roadmap
+# ARC_n Browser Roadmap 
 
 ## Vision
 
