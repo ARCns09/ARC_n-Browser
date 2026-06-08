@@ -512,6 +512,53 @@ function createTab(url) {
     return { action: 'deny' };
   });
 
+  // ── Keyboard shortcuts from tab webContents ─────────────────────────────
+  // The chrome UI only receives keydown events when it has focus.
+  // When a tab's webContents has focus (user is browsing), we need
+  // before-input-event to intercept browser shortcuts.
+  view.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return;
+    const ctrl = input.control || input.meta;
+
+    if (ctrl && input.key === 't') {
+      event.preventDefault();
+      createTab();
+    }
+    if (ctrl && input.key === 'w') {
+      event.preventDefault();
+      closeTab(tabId);
+    }
+    if (ctrl && input.key === 'l') {
+      event.preventDefault();
+      // Focus the omnibox in the chrome UI
+      sendToRenderer('shortcut:focus-omnibox');
+    }
+    if (ctrl && input.key === 'r') {
+      event.preventDefault();
+      view.webContents.reload();
+    }
+    if (ctrl && input.key === 'd') {
+      event.preventDefault();
+      sendToRenderer('shortcut:toggle-bookmark');
+    }
+    if (ctrl && input.key === 'j') {
+      event.preventDefault();
+      sendToRenderer('shortcut:toggle-downloads');
+    }
+    if (input.alt && input.key === 'ArrowLeft') {
+      event.preventDefault();
+      if (view.webContents.navigationHistory.canGoBack()) {
+        view.webContents.navigationHistory.goBack();
+      }
+    }
+    if (input.alt && input.key === 'ArrowRight') {
+      event.preventDefault();
+      if (view.webContents.navigationHistory.canGoForward()) {
+        view.webContents.navigationHistory.goForward();
+      }
+    }
+  });
+
   // Listen for shortcut management messages from home page
   // Uses new Event object API (avoids deprecated positional arguments)
   view.webContents.on('console-message', (event) => {
@@ -620,10 +667,11 @@ function registerIPC() {
 
     let target = url.trim();
 
-    // Handle internal URLs
+    // Handle internal URLs — must create a new tab because internal pages
+    // need preload-internal.js which is set at WebContentsView creation time.
+    // Loading an internal page in an existing tab would lack the preload.
     if (isInternalUrl(target)) {
-      const filePath = resolveInternalPage(target);
-      tab.view.webContents.loadFile(filePath);
+      createTab(target);
       return;
     }
 

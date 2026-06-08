@@ -129,6 +129,13 @@
         img.replaceWith(fallback);
       };
       slot.replaceWith(img);
+    } else {
+      // Reset to fallback globe (e.g., when navigating to home page)
+      const fallback = document.createElement('span');
+      fallback.className = 'tab-favicon-fallback';
+      fallback.innerHTML = FAVICON_FALLBACK_SVG;
+      fallback.dataset.faviconSlot = 'true';
+      slot.replaceWith(fallback);
     }
   }
 
@@ -160,7 +167,10 @@
     downloadPanel.classList.toggle('hidden');
   }
 
-  btnDownloads.addEventListener('click', toggleDownloadPanel);
+  btnDownloads.addEventListener('click', (e) => {
+    e.stopPropagation(); // prevent click-outside handler from immediately closing
+    toggleDownloadPanel();
+  });
   downloadPanelClose.addEventListener('click', () => {
     downloadPanel.classList.add('hidden');
   });
@@ -417,6 +427,21 @@
 
   window.arcn.onDownloadFailed((data) => {
     failDownload(data);
+  });
+
+  // ── Shortcut events from main process (fired via before-input-event) ────
+  // These fire when the user presses shortcuts while a tab has focus.
+
+  window.arcn.onShortcutToggleBookmark(() => {
+    btnBookmark.click();
+  });
+
+  window.arcn.onShortcutToggleDownloads(() => {
+    toggleDownloadPanel();
+  });
+
+  window.arcn.onShortcutFocusOmnibox(() => {
+    omnibox.focus();
   });
 
 })();

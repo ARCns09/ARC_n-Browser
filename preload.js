@@ -92,5 +92,22 @@ contextBridge.exposeInMainWorld('arcn', {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('download:failed', handler);
     return () => ipcRenderer.removeListener('download:failed', handler);
+  },
+
+  // ── Shortcut Events (from main process before-input-event) ──
+  onShortcutToggleBookmark: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('shortcut:toggle-bookmark', handler);
+    return () => ipcRenderer.removeListener('shortcut:toggle-bookmark', handler);
+  },
+  onShortcutToggleDownloads: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('shortcut:toggle-downloads', handler);
+    return () => ipcRenderer.removeListener('shortcut:toggle-downloads', handler);
+  },
+  onShortcutFocusOmnibox: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('shortcut:focus-omnibox', handler);
+    return () => ipcRenderer.removeListener('shortcut:focus-omnibox', handler);
   }
 });
