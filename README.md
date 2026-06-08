@@ -84,9 +84,9 @@ Latest Milestone:
 
 ## 📸 Screenshots
 
-### Main Browser Window
+### Browsing Window
 
-![Main Window](screenshots/main-window.jpg)
+![Browsing Window](screenshots/main-window.jpg)
 
 ### Start Page
 
